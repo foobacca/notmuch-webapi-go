@@ -27,16 +27,8 @@ func main() {
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-type", "application/json")
-
 	data := ResponseData{"hello world"}
-	jsonBytes, err := json.Marshal(data)
-	if err != nil {
-		http.Error(w, "Oops", http.StatusInternalServerError)
-	}
-	jsonText := string(jsonBytes[:])
-	fmt.Fprintf(w, jsonText)
+	write_json(w, data)
 }
 
 type CountData struct {
@@ -45,23 +37,29 @@ type CountData struct {
 }
 
 func CountHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-type", "application/json")
-
 	//func OpenDatabase(path string, mode DatabaseMode) (*Database, Status) {
 	db, status := get_notmuch_db()
 	if status != notmuch.STATUS_SUCCESS {
 		http.Error(w, "notmuch Oops", http.StatusInternalServerError)
 	}
-	query := db.CreateQuery("*")
+	query_str := "*"
+	query := db.CreateQuery(query_str)
 	msgCount := query.CountMessages()
 
-	data := CountData{"*", msgCount}
+	data := CountData{query_str, msgCount}
+
+	write_json(w, data)
+}
+
+func write_json(w http.ResponseWriter, data interface{}) {
 	jsonBytes, err := json.Marshal(data)
 	if err != nil {
 		http.Error(w, "json Oops", http.StatusInternalServerError)
 	}
 	jsonText := string(jsonBytes[:])
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-type", "application/json")
 	fmt.Fprintf(w, jsonText)
 }
 
